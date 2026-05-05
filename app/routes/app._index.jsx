@@ -160,6 +160,7 @@ export default function Index() {
 
           
         </s-paragraph>
+        
         <s-stack direction="inline" gap="base">
           <s-button
             onClick={generateProduct}

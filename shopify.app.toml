@@ -13,12 +13,12 @@ include_config_on_deploy = true
 api_version = "2026-07"
 
   [[webhooks.subscriptions]]
-  topics = [ "app/uninstalled" ]
-  uri = "/webhooks/app/uninstalled"
-
-  [[webhooks.subscriptions]]
   topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
@@ -27,23 +27,10 @@ scopes = "write_products,write_metaobjects,write_metaobject_definitions"
 [auth]
 redirect_urls = [ "https://example.com/api/auth" ]
 
-[product.metafields.app.demo_info]
-type = "single_line_text_field"
-name = "Demo Source Info"
-description = "Tracks products created by the Shopify app template for development"
-
-  [product.metafields.app.demo_info.access]
-  admin = "merchant_read_write"
-
-
-
-
-
-
+# QR CODE STUFF
 [metaobjects.app.qrcode]
 name = "QR Code"
 description = "QR Codes that link to products"
-
   [metaobjects.app.qrcode.access]
   admin = "merchant_read_write"
 
@@ -57,17 +44,27 @@ name = "Description"
 type = "multi_line_text_field"
 
 [metaobjects.app.qrcode.fields.product]
-name="Product"
-type="product_reference"
+name = "Product"
+type = "product_reference"
 
 [metaobjects.app.qrcode.fields.product_variant]
-name="Product Variant"
-type="variant_reference"
+name = "Product Variant"
+type = "variant_reference"
 
 [metaobjects.app.qrcode.fields.destination]
-name="destination"
-type="single_line_text_field"
+name = "destination"
+type = "single_line_text_field"
 
 [metaobjects.app.qrcode.fields.scan]
-name="scans"
-type="number_integer"
+name = "scans"
+type = "number_integer"
+
+
+# COMMISSION MARKER METAFIELDS
+[product.metafields.app.commission]
+type = "json"
+name = "Commission"
+description = "Commission configuration for this product"
+
+  [product.metafields.app.commission.access]
+  admin = "merchant_read_write"
