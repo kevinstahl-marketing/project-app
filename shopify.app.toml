@@ -68,3 +68,25 @@ description = "Commission configuration for this product"
 
   [product.metafields.app.commission.access]
   admin = "merchant_read_write"
+
+
+# COMMISSION PARTNER METAOBJECT
+[metaobjects.app.partner]
+name="Partner"
+access.admin = "merchant_read_write"
+
+[metaobjects.app.partner.fields.full_name]
+name="Full Name"
+type = "single_line_text_field"
+
+[metaobjects.app.partner.fields.email]
+name = "Email"
+type = "single_line_text_field"
+
+[metaobjects.app.partner.fields.active]
+name = "Active"
+type = "boolean"
+
+[metaobjects.app.partner.fields.notes]
+name = "Notes"
+type = "multi_line_text_field"

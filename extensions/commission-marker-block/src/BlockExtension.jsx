@@ -30,6 +30,14 @@ function Extension() {
     event.waitUntil(updateIssues());
   };
 
+  if (loading) {
+    return (
+      <s-stack direction="inline">
+        <s-spinner/>
+      </s-stack>
+    );
+  }
+
   const onReset = () => {};
 
   return (
