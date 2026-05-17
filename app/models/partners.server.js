@@ -1,5 +1,7 @@
 import { authenticate } from "../shopify.server";
 
+const METAOBJECT_TYPE = "$app:partner";
+
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
   const response = await admin.graphql(
@@ -38,37 +40,40 @@ export const loader = async ({ request }) => {
   return json.data;
 };
 
-export async function saveProductCommissionRule(data, graphql) {
+export async function savePartner(data, graphql) {
   const response = await graphql(
     `
-      mutation MetafieldsSet($metafields: [MetafieldsSetInput!]!) {
-        metafieldsSet(metafields: $metafields) {
-          metafields {
-            key
-            namespace
-            jsonValue
-            createdAt
-            updatedAt
+      mutation UpsertPartner(
+        $handle: MetaobjectHandleInput!
+        $metaobject: MetaobjectUpsertInput!
+      ) {
+        metaobjectUpsert(handle: $handle, metaobject: $metaobject) {
+          metaobject {
+            id
+            handle
           }
           userErrors {
             field
             message
-            code
           }
         }
       }
     `,
+
     {
       variables: {
-        metafields: [
-          {
-            key: "commission",
-            namespace: "$app",
-            ownerId: data.ownerId,
-            type: "json",
-            value: JSON.stringify(data.commission),
-          },
-        ],
+        handle: {
+          type: METAOBJECT_TYPE,
+          handle: data.handle,
+        },
+        metaobject: {
+          fields: [
+            { key: "full_name", value: data.full_name },
+            { key: "email", value: data.email },
+            { key: "active", value: data.active },
+            { key: "notes", value: data.notes },
+          ],
+        },
       },
     },
   );
@@ -83,4 +88,13 @@ export async function saveProductCommissionRule(data, graphql) {
   return json.data.metafieldsSet.metafields[0];
 }
 
+export function generateHandle(title) {
+  return `${slugify(title)}-${Date.now().toString(36)}`;
+}
 
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}

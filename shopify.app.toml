@@ -69,7 +69,6 @@ description = "Commission configuration for this product"
   [product.metafields.app.commission.access]
   admin = "merchant_read_write"
 
-
 # COMMISSION PARTNER METAOBJECT
 [metaobjects.app.partner]
 name="Partner"

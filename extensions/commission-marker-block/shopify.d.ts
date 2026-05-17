@@ -7,6 +7,12 @@ declare module './src/BlockExtension.jsx' {
 }
 
 //@ts-ignore
+declare module './src/components/PartnerCreatePopover.jsx' {
+  const shopify: import('@shopify/ui-extensions/admin.product-details.block.render').Api;
+  const globalThis: { shopify: typeof shopify };
+}
+
+//@ts-ignore
 declare module './src/utils.js' {
   const shopify: import('@shopify/ui-extensions/admin.product-details.block.render').Api;
   const globalThis: { shopify: typeof shopify };
