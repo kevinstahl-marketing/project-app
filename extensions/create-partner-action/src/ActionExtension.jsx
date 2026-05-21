@@ -1,57 +1,116 @@
-import "@shopify/ui-extensions/preact";
-import {render} from 'preact';
-import {useEffect, useState} from 'preact/hooks';
+import { render } from "preact";
+import { useEffect, useState, useCallback } from "preact/hooks";
+import { savePartner, generateHandle } from "./utils";
 
 export default async () => {
   render(<Extension />, document.body);
+};
+function validateForm({ full_name, email }) {
+  return {
+    isValid: Boolean(full_name) && Boolean(email),
+    errors: {
+      full_name: !full_name,
+      email: !email,
+    },
+  };
 }
 
 function Extension() {
-  const {i18n, close, data, extension: {target}} = shopify;
-  console.log({data});
-  const [productTitle, setProductTitle] = useState('');
-  // Use direct API calls to fetch data from Shopify.
-  // See https://shopify.dev/docs/api/admin-graphql for more information about Shopify's GraphQL API
-  useEffect(() => {
-    (async function getProductInfo() {
-      const getProductQuery = {
-        query: `query Product($id: ID!) {
-          product(id: $id) {
-            title
-          }
-        }`,
-        variables: {id: data.selected[0].id},
-      };
+  const {
+    i18n,
+    close,
+    intents,
+    data,
+    extension: { target },
+  } = shopify;
 
-      const res = await fetch("shopify:admin/api/graphql.json", {
-        method: "POST",
-        body: JSON.stringify(getProductQuery),
-      });
+  const [partner, setPartner] = useState({
+    full_name: "",
+    email: "",
+    active: "true",
+    partner_type: "",
+    notes: "",
+    type: "",
+  });
 
-      if (!res.ok) {
-        console.error('Network error');
-      }
+  const [formErrors, setFormErrors] = useState({});
+  const [editing, setIsEditing] = useState(false);
 
-      const productData = await res.json();
-      setProductTitle(productData.data.product.title);
-    })();
-  }, [data.selected]);
+  const onSubmit = useCallback(async () => {
+    const { isValid, errors } = validateForm(partner);
+    const handle = generateHandle(partner.full_name);
+    setFormErrors(errors);
+    console.log(errors);
+    if (isValid) {
+      console.log(handle);
+      await savePartner(partner, handle);
+      close();
+    }
+  });
+
   return (
-    // The AdminAction component provides an API for setting the title and actions of the Action extension wrapper.
-    <s-admin-action>
-      <s-stack direction="block">
-        {/* Set the translation values for each supported language in the locales directory */}
-        <s-text type="strong">{i18n.translate('welcome', {target})}</s-text>
-        <s-text>Current product: {productTitle}</s-text>
+    <s-admin-action heading="Create partner">
+      <s-button slot="primary-action" onClick={onSubmit}>
+        Save
+      </s-button>
+      <s-stack gap="base">
+        <s-text-field
+          label="Partner name"
+          name="full_name"
+          placeholder="Jane Doe"
+          value={partner.full_name}
+          onChange={(event) =>
+            setPartner((prev) => ({
+              ...prev,
+              full_name: event.target.value,
+            }))
+          }
+        />
+
+        <s-text-field
+          label="Email"
+          name="email"
+          type="email"
+          value={partner.email}
+          placeholder="jane@example.com"
+          onChange={(event) =>
+            setPartner((prev) => ({
+              ...prev,
+              email: event.target.value,
+            }))
+          }
+        />
+
+        <s-select
+          label="Partner type"
+          name="partner_type"
+          value={partner.type}
+          onChange={(event) =>
+            setPartner((prev) => ({
+              ...prev,
+              partner_type: event.target.value,
+            }))
+          }
+        >
+          <s-option value="creator">Creator</s-option>
+          <s-option value="affiliate">Affiliate</s-option>
+          <s-option value="sales_rep">Sales rep</s-option>
+          <s-option value="other">Other</s-option>
+        </s-select>
+
+        <s-text-area
+          label="Notes"
+          name="notes"
+          value={partner.notes}
+          placeholder="Optional notes about this partner"
+          onChange={(event) =>
+            setPartner((prev) => ({
+              ...prev,
+              notes: event.target.value,
+            }))
+          }
+        />
       </s-stack>
-      <s-button slot="primary-action" onClick={() => {
-          console.log('saving');
-          close();
-        }}>Done</s-button>
-      <s-button slot="secondary-actions" onClick={() => {
-          console.log('closing');
-          close();
-      }}>Close</s-button>
     </s-admin-action>
   );
 }

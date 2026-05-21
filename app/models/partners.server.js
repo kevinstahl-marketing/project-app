@@ -1,45 +1,6 @@
 import { authenticate } from "../shopify.server";
 
 const METAOBJECT_TYPE = "$app:partner";
-
-export const loader = async ({ request }) => {
-  const { admin } = await authenticate.admin(request);
-  const response = await admin.graphql(
-    `#graphql
-  mutation MetafieldsSet($metafields: [MetafieldsSetInput!]!) {
-    metafieldsSet(metafields: $metafields) {
-      metafields {
-        key
-        namespace
-        value
-        createdAt
-        updatedAt
-      }
-      userErrors {
-        field
-        message
-        code
-      }
-    }
-  }`,
-    {
-      variables: {
-        metafields: [
-          {
-            key: "example_key",
-            namespace: "example_namespace",
-            ownerId: "gid://shopify/Product/20995642",
-            type: "single_line_text_field",
-            value: "Example Value",
-          },
-        ],
-      },
-    },
-  );
-  const json = await response.json();
-  return json.data;
-};
-
 export async function savePartner(data, graphql) {
   const response = await graphql(
     `
@@ -72,6 +33,7 @@ export async function savePartner(data, graphql) {
             { key: "email", value: data.email },
             { key: "active", value: data.active },
             { key: "notes", value: data.notes },
+            { key: "type", value: data.type},
           ],
         },
       },

@@ -89,3 +89,7 @@ type = "boolean"
 [metaobjects.app.partner.fields.notes]
 name = "Notes"
 type = "multi_line_text_field"
+
+[metaobjects.app.partner.fields.type]
+name = "Notes"
+type = "single_line_text_field"
