@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { useEffect, useState, useCallback } from "preact/hooks";
-import { savePartner, generateHandle } from "./utils";
+import { savePartner, generateHandle, createConnectedAccount } from "./utils";
 
 export default async () => {
   render(<Extension />, document.body);
@@ -28,7 +28,6 @@ function Extension() {
     full_name: "",
     email: "",
     active: "true",
-    partner_type: "",
     notes: "",
     type: "",
   });
@@ -46,7 +45,18 @@ function Extension() {
       await savePartner(partner, handle);
       close();
     }
-  });
+  }, [partner, close]);
+
+  const handleCreateStripeAccount = useCallback(async () => {
+    const { isValid, errors } = validateForm(partner);
+    console.log("here")
+
+    if (isValid) {
+      console.log('is going?')
+      const json = await createConnectedAccount(partner);
+      window.open(json.onboardingUrl, "_top");
+    }
+  }, [partner.email]);
 
   return (
     <s-admin-action heading="Create partner">
@@ -83,12 +93,12 @@ function Extension() {
 
         <s-select
           label="Partner type"
-          name="partner_type"
+          name="type"
           value={partner.type}
           onChange={(event) =>
             setPartner((prev) => ({
               ...prev,
-              partner_type: event.target.value,
+              type: event.target.value,
             }))
           }
         >
@@ -111,6 +121,8 @@ function Extension() {
           }
         />
       </s-stack>
+      <s-button onClick={handleCreateStripeAccount}>Connect Stripe Account</s-button>
+      
     </s-admin-action>
   );
 }

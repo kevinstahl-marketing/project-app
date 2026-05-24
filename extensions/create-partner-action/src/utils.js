@@ -2,7 +2,7 @@ const METAOBJECT_TYPE = "$app:partner";
 export async function savePartner(data, handle) {
   console.log("before query", handle, data);
   const response = await makeGraphQLQuery(
-  `
+    `
     mutation UpsertPartner(
       $handle: MetaobjectHandleInput!
       $metaobject: MetaobjectUpsertInput!
@@ -20,22 +20,22 @@ export async function savePartner(data, handle) {
       }
     }
   `,
-  {
-    handle: {
-      type: METAOBJECT_TYPE,
-      handle,
+    {
+      handle: {
+        type: METAOBJECT_TYPE,
+        handle,
+      },
+      metaobject: {
+        fields: [
+          { key: "full_name", value: data.full_name ?? "" },
+          { key: "email", value: data.email ?? "" },
+          { key: "active", value: data.active ?? "false" },
+          { key: "notes", value: data.notes ?? "" },
+          { key: "type", value: data.type ?? "" },
+        ],
+      },
     },
-    metaobject: {
-      fields: [
-        { key: "full_name", value: data.full_name ?? "" },
-        { key: "email", value: data.email ?? "" },
-        { key: "active", value: data.active ?? false },
-        { key: "notes", value: data.notes ?? "" },
-        { key: "type", value: data.type ?? "" },
-      ],
-    },
-  },
-);
+  );
 
   console.log("FULL RESPONSE:", response);
 
@@ -44,6 +44,35 @@ export async function savePartner(data, handle) {
   console.log("METAOBJECT:", response?.data?.metaobjectUpsert?.metaobject);
 
   return response;
+}
+
+export async function createConnectedAccount(data) {
+
+  
+  console.log("before fetch");
+
+  try {
+    const res = await fetch(`/api/createStripeConnectAccount`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      body: JSON.stringify({
+        email: data.email,
+        full_name: data.full_name,
+      }),
+    });
+
+    const json = await res.json();
+    console.log("json:", json);
+
+    return json;
+
+
+  } catch (err) {
+    console.error("fetch exploded:", err);
+  }
 }
 
 export function generateHandle(name) {
@@ -56,7 +85,6 @@ function slugify(text) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 }
-
 
 async function makeGraphQLQuery(query, variables) {
   const graphQLQuery = {
