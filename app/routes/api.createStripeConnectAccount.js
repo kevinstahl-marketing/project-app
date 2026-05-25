@@ -1,6 +1,20 @@
 import { authenticate } from "../shopify.server";
 import { stripe } from "../services/stripe.server";
 
+export async function loader({ request }) {
+  const { cors } = await authenticate.admin(request);
+  // 1. Manually catch the browser's OPTIONS preflight request
+  if (request.method === "OPTIONS") {
+    return cors(request, json({ status: 200 }));
+  }
+
+  // 2. Your actual logic
+  const data = { message: "Hello from backend" };
+  
+  // 3. Wrap your final response in the cors() wrapper
+  return cors(request, json(data));
+}
+
 export async function action({ request }) {
   const { cors, session } = await authenticate.admin(request);
   const url = new URL(request.url);
