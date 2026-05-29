@@ -2,8 +2,6 @@ import { authenticate } from "../shopify.server";
 
 const METAOBJECT_TYPE = "$app:partner";
 
-
-
 export async function getPartner(handle, graphql, shop) {
   const response = await graphql(
     `
@@ -26,6 +24,16 @@ export async function getPartner(handle, graphql, shop) {
           }
 
           active: field(key: "active") {
+            jsonValue
+          }
+
+          phone: field(key: "phone") {
+            jsonValue
+          }
+          type: field(key: "type") {
+            jsonValue
+          }
+          bio: field(key: "bio") {
             jsonValue
           }
 
@@ -72,7 +80,7 @@ export async function getPartner(handle, graphql, shop) {
 
   const { data } = await response.json();
 
-  const metaobject = data?.metaObjectByHandle;
+  const metaobject = data?.metaobjectByHandle;
   if (!metaobject) {
     return null;
   }
@@ -102,7 +110,16 @@ export async function getPartners(graphql, shop) {
             email: field(key: "email") {
               jsonValue
             }
+            phone: field(key: "phone") {
+              jsonValue
+            }
+            type: field(key: "type") {
+              jsonValue
+            }
 
+            bio: field(key: "bio") {
+              jsonValue
+            }
             status: field(key: "status") {
               jsonValue
             }
@@ -157,7 +174,7 @@ export async function getPartners(graphql, shop) {
   return Promise.all(metaobjects.map((mo) => transformPartnerMetaobject(mo)));
 }
 
-export async function savePartner(data, graphql) {
+export async function savePartner(handle, data, graphql) {
   const response = await graphql(
     `
       mutation UpsertPartner(
@@ -181,33 +198,36 @@ export async function savePartner(data, graphql) {
       variables: {
         handle: {
           type: METAOBJECT_TYPE,
-          handle: data.handle,
+          handle: handle,
         },
         metaobject: {
           fields: [
-            { key: "full_name", value: data.full_name },
+            { key: "full_name", value: data.fullName },
             { key: "email", value: data.email },
             { key: "active", value: data.active },
             { key: "notes", value: data.notes },
             { key: "type", value: data.type },
+            { key: "profileImage", value: data.profileImage },
+            { key: "businessName", value: data.businessName },
+            { key: "phone", value: data.phone },
           ],
         },
       },
     },
   );
 
-  const json = await response.json();
-  const errors = json.data.metafieldsSet.userErrors;
+  const { data: responseData } = await response.json();
+  const { metaobjectUpsert } = responseData;
 
-  if (errors.length) {
-    throw new Error(errors[0].message);
+  if (metaobjectUpsert.userErrors.length) {
+    throw new Error(metaobjectUpsert.userErrors[0].message);
   }
 
-  return json.data.metafieldsSet.metafields[0];
+  return metaobjectUpsert.metaobject;
 }
 
-export function generateHandle(title) {
-  return `${slugify(title)}-${Date.now().toString(36)}`;
+export function generateHandle(name) {
+  return `${slugify(name)}-${Date.now().toString(36)}`;
 }
 
 function slugify(text) {
@@ -236,6 +256,7 @@ async function transformPartnerMetaobject(metaobject, shop) {
     phone: readJsonField(metaobject.phone),
     status: readJsonField(metaobject.status, "pending"),
     active: readJsonField(metaobject.active, false),
+    type: readJsonField(metaobject.type, "partner"),
 
     profileImage: readImageField(metaobject.profileImage),
 
@@ -244,19 +265,12 @@ async function transformPartnerMetaobject(metaobject, shop) {
       metaobject.stripeOnboardingComplete,
       false,
     ),
-    stripeChargesEnabled: readJsonField(
-      metaobject.stripeChargesEnabled,
-      false,
-    ),
-    stripePayoutsEnabled: readJsonField(
-      metaobject.stripePayoutsEnabled,
-      false,
-    ),
+    stripeChargesEnabled: readJsonField(metaobject.stripeChargesEnabled, false),
+    stripePayoutsEnabled: readJsonField(metaobject.stripePayoutsEnabled, false),
 
     notes: readJsonField(metaobject.notes),
   };
 }
-
 
 export async function archivePartner(id, graphql, shop) {
   const response = await graphql(
@@ -264,14 +278,7 @@ export async function archivePartner(id, graphql, shop) {
       mutation ArchivePartner($id: ID!) {
         metaobjectUpdate(
           id: $id
-          metaobject: {
-            fields: [
-              {
-                key: "status"
-                value: "archived"
-              }
-            ]
-          }
+          metaobject: { fields: [{ key: "status", value: "archived" }] }
         ) {
           metaobject {
             id

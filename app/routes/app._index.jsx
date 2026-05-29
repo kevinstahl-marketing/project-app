@@ -6,7 +6,7 @@ import { authenticate } from "../shopify.server";
 import { getPartners } from "../models/partners.server";
 import { useLoaderData } from "react-router";
 
-
+import { RecentPartnerTable } from "../components/partners/RecentPartnerTable";
 
 import {
   WelcomePanel,
@@ -44,7 +44,7 @@ export default function Index() {
       </s-section>
 
       <s-section heading="Partners">
-        <DashboardPartnerTable partners={partners}></DashboardPartnerTable>
+        <RecentPartnerTable partners={partners}></RecentPartnerTable>
       </s-section>
 
       <s-section slot="aside" heading="Setup Checklist">

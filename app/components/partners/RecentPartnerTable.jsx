@@ -78,7 +78,7 @@ const PartnerTableRow = ({ partner }) => (
   </s-table-row>
 );
 
-export function DashboardPartnerTable({ partners }) {
+export function RecentPartnerTable({ partners }) {
   return (
     <s-section padding="none" accessibilityLabel="Partner table">
       <s-table>
