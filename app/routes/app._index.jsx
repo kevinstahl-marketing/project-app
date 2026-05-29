@@ -1,12 +1,11 @@
 import { useEffect } from "react";
-import { useFetcher } from "react-router";
+import { useFetcher, useNavigate } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
-
 import { getPartners } from "../models/partners.server";
-
 import { useLoaderData } from "react-router";
+
 
 
 import {
@@ -32,6 +31,7 @@ export default function Index() {
   const fetcher = useFetcher();
   const shopify = useAppBridge();
   const { partners } = useLoaderData();
+  const navigate = useNavigate();
 
   return (
     <s-page heading="Partner Manager">

@@ -2,7 +2,83 @@ import { authenticate } from "../shopify.server";
 
 const METAOBJECT_TYPE = "$app:partner";
 
-export async function getPartner(handle, graphql, shop) {}
+
+
+export async function getPartner(handle, graphql, shop) {
+  const response = await graphql(
+    `
+      query GetPartner($handle: MetaobjectHandleInput!) {
+        metaobjectByHandle(handle: $handle) {
+          id
+          handle
+          updatedAt
+
+          fullName: field(key: "full_name") {
+            jsonValue
+          }
+
+          email: field(key: "email") {
+            jsonValue
+          }
+
+          status: field(key: "status") {
+            jsonValue
+          }
+
+          active: field(key: "active") {
+            jsonValue
+          }
+
+          profileImage: field(key: "profile_image") {
+            reference {
+              ... on MediaImage {
+                image {
+                  url
+                  altText
+                }
+              }
+            }
+          }
+
+          stripeAccountId: field(key: "stripe_account_id") {
+            jsonValue
+          }
+
+          stripeOnboardingComplete: field(key: "stripe_onboarding_complete") {
+            jsonValue
+          }
+
+          stripeChargesEnabled: field(key: "stripe_charges_enabled") {
+            jsonValue
+          }
+
+          stripePayoutsEnabled: field(key: "stripe_payouts_enabled") {
+            jsonValue
+          }
+
+          notes: field(key: "notes") {
+            jsonValue
+          }
+        }
+      }
+    `,
+
+    {
+      variables: {
+        handle: { type: METAOBJECT_TYPE, handle },
+      },
+    },
+  );
+
+  const { data } = await response.json();
+
+  const metaobject = data?.metaObjectByHandle;
+  if (!metaobject) {
+    return null;
+  }
+
+  return transformPartnerMetaobject(metaobject, shop);
+}
 
 export async function getPartners(graphql, shop) {
   const response = await graphql(
@@ -18,15 +94,19 @@ export async function getPartners(graphql, shop) {
             id
             handle
             updatedAt
-            full_name: field(key: "full_name") {
+
+            fullName: field(key: "full_name") {
               jsonValue
             }
+
             email: field(key: "email") {
               jsonValue
             }
+
             status: field(key: "status") {
               jsonValue
             }
+
             active: field(key: "active") {
               jsonValue
             }
@@ -45,15 +125,19 @@ export async function getPartners(graphql, shop) {
             stripeAccountId: field(key: "stripe_account_id") {
               jsonValue
             }
+
             stripeOnboardingComplete: field(key: "stripe_onboarding_complete") {
               jsonValue
             }
+
             stripeChargesEnabled: field(key: "stripe_charges_enabled") {
               jsonValue
             }
+
             stripePayoutsEnabled: field(key: "stripe_payouts_enabled") {
               jsonValue
             }
+
             notes: field(key: "notes") {
               jsonValue
             }
@@ -71,7 +155,6 @@ export async function getPartners(graphql, shop) {
   const metaobjects = data?.metaobjects?.nodes ?? [];
 
   return Promise.all(metaobjects.map((mo) => transformPartnerMetaobject(mo)));
-
 }
 
 export async function savePartner(data, graphql) {
@@ -134,25 +217,83 @@ function slugify(text) {
     .replace(/(^-|-$)/g, "");
 }
 
+function readJsonField(field, fallback = "") {
+  return field?.jsonValue ?? fallback;
+}
 
-async function transformPartnerMetaobject(metaobject) {
+function readImageField(field) {
+  return field?.reference?.image ?? null;
+}
+
+async function transformPartnerMetaobject(metaobject, shop) {
   return {
     id: metaobject.id,
     handle: metaobject.handle,
-    updated_at: metaobject.updated_at,
+    updatedAt: metaobject.updatedAt,
 
-    full_name: metaobject.full_name?.jsonValue ?? "",
-    email: metaobject.email?.jsonValue ?? "",
-    phone: metaobject.phone?.jsonValue ?? "",
-    status: metaobject.status?.jsonValue ?? "pending",
-    active: metaobject.active?.jsonValue ?? false,
+    fullName: readJsonField(metaobject.fullName),
+    email: readJsonField(metaobject.email),
+    phone: readJsonField(metaobject.phone),
+    status: readJsonField(metaobject.status, "pending"),
+    active: readJsonField(metaobject.active, false),
 
-    stripeAccountId: metaobject.stripeAccountId?.jsonValue ?? null,
-    stripeOnboardingComplete:
-      metaobject.stripeOnboardingComplete?.jsonValue ?? false,
-    stripeChargesEnabled: metaobject.stripeChargesEnabled?.jsonValue ?? false,
-    stripePayoutsEnabled: metaobject.stripePayoutsEnabled?.jsonValue ?? false,
+    profileImage: readImageField(metaobject.profileImage),
 
-    notes: metaobject.notes?.jsonValue ?? "",
+    stripeAccountId: readJsonField(metaobject.stripeAccountId, null),
+    stripeOnboardingComplete: readJsonField(
+      metaobject.stripeOnboardingComplete,
+      false,
+    ),
+    stripeChargesEnabled: readJsonField(
+      metaobject.stripeChargesEnabled,
+      false,
+    ),
+    stripePayoutsEnabled: readJsonField(
+      metaobject.stripePayoutsEnabled,
+      false,
+    ),
+
+    notes: readJsonField(metaobject.notes),
   };
-};
+}
+
+
+export async function archivePartner(id, graphql, shop) {
+  const response = await graphql(
+    `
+      mutation ArchivePartner($id: ID!) {
+        metaobjectUpdate(
+          id: $id
+          metaobject: {
+            fields: [
+              {
+                key: "status"
+                value: "archived"
+              }
+            ]
+          }
+        ) {
+          metaobject {
+            id
+            handle
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `,
+    {
+      variables: { id },
+    },
+  );
+
+  const { data } = await response.json();
+
+  if (data.metaobjectUpdate.userErrors.length) {
+    throw new Error(data.metaobjectUpdate.userErrors[0].message);
+  }
+
+  return data.metaobjectUpdate.metaobject;
+}
